@@ -62,3 +62,6 @@ Ao rejeitar, informe opcionalmente `reason`. A resposta devolve o pedido atualiz
 ## Persistência
 
 O repositório atual é em memória e inclui dados de demonstração, para tornar o módulo executável sem dependências externas. A interface `OrderRepository` concentra o acesso aos dados; em produção, substitua `InMemoryOrderRepository` por uma implementação com o banco do projeto, preservando os métodos `findOpen`, `findByCode` e `save`.
+
+# QUEX-seafood_marketplace
+QUÉX is an online marketplace that directly connects artisanal fishers with buyers, eliminating intermediaries, increasing fishers’ income, and making fresh, traceable seafood more accessible to the public.
