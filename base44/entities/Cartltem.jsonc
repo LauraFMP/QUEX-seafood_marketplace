@@ -1,0 +1,37 @@
+{
+  "name": "CartItem",
+  "type": "object",
+  "properties": {
+    "buyer_id": {
+      "type": "string",
+      "description": "User ID of the buyer"
+    },
+    "product_id": {
+      "type": "string"
+    },
+    "product_name": {
+      "type": "string"
+    },
+    "product_price": {
+      "type": "number"
+    },
+    "product_image": {
+      "type": "string"
+    },
+    "seller_name": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "integer",
+      "default": 1
+    },
+    "subtotal": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "buyer_id",
+    "product_id",
+    "quantity"
+  ]
+}

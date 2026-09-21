@@ -1,0 +1,49 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "buyer",
+        "seller",
+        "admin"
+      ],
+      "default": "buyer"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "cpf": {
+      "type": "string"
+    },
+    "cpf_cnpj": {
+      "type": "string"
+    },
+    "business_name": {
+      "type": "string"
+    },
+    "birth_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "location": {
+      "type": "string"
+    },
+    "commercial": {
+      "type": "boolean",
+      "default": false
+    },
+    "own_delivery": {
+      "type": "boolean",
+      "default": false
+    },
+    "profile_complete": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

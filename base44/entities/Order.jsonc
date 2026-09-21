@@ -1,0 +1,97 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "buyer_id": {
+      "type": "string"
+    },
+    "buyer_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "preparing",
+        "dispatched",
+        "delivered",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "total": {
+      "type": "number"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "pix",
+        "card",
+        "boleto",
+        "cash"
+      ]
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "delivery_address": {
+      "type": "string"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "tracking_code": {
+      "type": "string"
+    },
+    "delivery_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_transit",
+        "delivered"
+      ],
+      "default": "pending"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "price": {
+            "type": "number"
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "seller_id": {
+            "type": "string"
+          },
+          "seller_name": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "buyer_id",
+    "total"
+  ]
+}

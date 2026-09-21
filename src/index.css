@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 95%;
+    --foreground: 237 80% 25%;
+    --card: 0 0% 100%;
+    --card-foreground: 237 80% 25%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 237 80% 25%;
+    --primary: 237 80% 25%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 237 44% 92%;
+    --secondary-foreground: 237 80% 25%;
+    --muted: 0 0% 93%;
+    --muted-foreground: 237 20% 47%;
+    --accent: 33 88% 59%;
+    --accent-foreground: 237 80% 25%;
+    --destructive: 16 89% 53%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 237 20% 88%;
+    --input: 237 20% 88%;
+    --ring: 237 80% 25%;
+    --chart-1: 33 88% 59%;
+    --chart-2: 237 44% 55%;
+    --chart-3: 237 80% 25%;
+    --chart-4: 16 89% 53%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.75rem;
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+    --font-display: 'Playfair Display', serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 233 97% 24%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 202 100% 95%;
+    --sidebar-accent-foreground: 233 97% 24%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 233 97% 24%;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+}
+
+.gradient-btn {
+  background: linear-gradient(135deg, #F29E38, #F2541B);
+  color: #ffffff;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+.gradient-btn:hover {
+  background: linear-gradient(135deg, #F2541B, #F29E38);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(242, 84, 27, 0.4);
+}
+.gradient-bg {
+  background: linear-gradient(135deg, #F29E38, #F2541B);
+}
+.gradient-text {
+  background: linear-gradient(135deg, #F29E38, #F2541B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
