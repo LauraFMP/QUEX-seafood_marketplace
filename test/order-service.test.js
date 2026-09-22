@@ -1,82 +1,62 @@
-import {
-	ORDER_STATUS_SEQUENCE,
-	CLOSED_ORDER_STATUSES,
-	PaymentStatus,
-} from '../domain/order.js';
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { OrderStatus, PaymentStatus } from '../src/domain/order.js';
+import { InMemoryOrderRepository } from '../src/repositories/in-memory-order-repository.js';
+import { DomainError, OrderService } from '../src/services/order-service.js';
 
-export class DomainError extends Error {
-	constructor(message) {
-		super(message);
-		this.name = 'DomainError';
-	}
+const clock = () => new Date('2026-09-11T12:00:00.000Z');
+
+function createOrder(orderCode, acceptedAt, status = OrderStatus.ACCEPTED) {
+	return {
+		orderCode,
+		acceptedAt,
+		status,
+		payment: { status: PaymentStatus.PENDING },
+	};
 }
 
-export class OrderService {
-	/**
-	 * @param {object} repository - precisa expor findAll, findByCode e save.
-	 * @param {() => Date} clock - injeção de relógio, facilita testes.
-	 */
-	constructor(repository, clock = () => new Date()) {
-		this.repository = repository;
-		this.clock = clock;
-	}
+test('lista pedidos abertos na ordem de aceite', async () => {
+	const repository = new InMemoryOrderRepository([
+		createOrder('QX-2', '2026-09-11T10:00:00.000Z'),
+		createOrder('QX-1', '2026-09-11T09:00:00.000Z'),
+		createOrder('QX-3', '2026-09-11T08:00:00.000Z', OrderStatus.DELIVERED),
+	]);
+	const service = new OrderService(repository, clock);
 
-	// Lista pedidos ainda "em aberto" (não entregues/cancelados),
-	// ordenados por ordem de aceite, com a posição na fila.
-	async listOpenOrders() {
-		const orders = await this.repository.findAll();
-		return orders
-			.filter((order) => !CLOSED_ORDER_STATUSES.includes(order.status))
-			.sort((a, b) => new Date(a.acceptedAt) - new Date(b.acceptedAt))
-			.map((order, index) => ({ ...order, position: index + 1 }));
-	}
+	assert.deepEqual(
+		(await service.listOpenOrders()).map(({ orderCode, position }) => ({ orderCode, position })),
+		[
+			{ orderCode: 'QX-1', position: 1 },
+			{ orderCode: 'QX-2', position: 2 },
+		]
+	);
+});
 
-	async validatePayment(orderCode, { approved, validatedBy }) {
-		const order = await this._getOrderOrFail(orderCode);
+test('bloqueia avanço sem pagamento validado', async () => {
+	const service = new OrderService(
+		new InMemoryOrderRepository([createOrder('QX-1', '2026-09-11T09:00:00.000Z')]),
+		clock
+	);
 
-		const updated = {
-			...order,
-			payment: {
-				...order.payment,
-				status: approved ? PaymentStatus.VALIDATED : PaymentStatus.REJECTED,
-				validatedBy,
-				validatedAt: this.clock().toISOString(),
-			},
-		};
+	await assert.rejects(
+		service.updateStatus('QX-1', OrderStatus.PREPARING),
+		(error) => error instanceof DomainError && error.statusCode === 422
+	);
+});
 
-		return this.repository.save(updated);
-	}
+test('valida pagamento e permite iniciar o preparo', async () => {
+	const service = new OrderService(
+		new InMemoryOrderRepository([createOrder('QX-1', '2026-09-11T09:00:00.000Z')]),
+		clock
+	);
 
-	async updateStatus(orderCode, newStatus) {
-		const order = await this._getOrderOrFail(orderCode);
+	const validated = await service.validatePayment('QX-1', {
+		approved: true,
+		validatedBy: 'seller-42',
+	});
+	const updated = await service.updateStatus('QX-1', OrderStatus.PREPARING);
 
-		const currentIndex = ORDER_STATUS_SEQUENCE.indexOf(order.status);
-		const nextIndex = ORDER_STATUS_SEQUENCE.indexOf(newStatus);
-
-		if (nextIndex === -1 || nextIndex !== currentIndex + 1) {
-			throw new DomainError(
-				`Não é possível pular direto de "${order.status}" para "${newStatus}".`
-			);
-		}
-
-		// Antes de entrar em preparo, o pagamento precisa estar validado.
-		if (
-			newStatus === ORDER_STATUS_SEQUENCE[1] &&
-			order.payment?.status !== PaymentStatus.VALIDATED
-		) {
-			throw new DomainError(
-				'Não é possível avançar o pedido sem pagamento validado.'
-			);
-		}
-
-		return this.repository.save({ ...order, status: newStatus });
-	}
-
-	async _getOrderOrFail(orderCode) {
-		const order = await this.repository.findByCode(orderCode);
-		if (!order) {
-			throw new DomainError(`Pedido "${orderCode}" não encontrado.`);
-		}
-		return order;
-	}
-}
+	assert.equal(validated.payment.status, PaymentStatus.VALIDATED);
+	assert.equal(validated.payment.validatedBy, 'seller-42');
+	assert.equal(updated.status, OrderStatus.PREPARING);
+});
