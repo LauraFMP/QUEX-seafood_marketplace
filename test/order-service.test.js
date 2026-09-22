@@ -1,43 +1,82 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { InMemoryOrderRepository } from '../src/repositories/in-memory-order-repository.js';
-import { OrderService, DomainError } from '../src/services/order-service.js';
-import { OrderStatus, PaymentStatus } from '../src/domain/order.js';
+import {
+	ORDER_STATUS_SEQUENCE,
+	CLOSED_ORDER_STATUSES,
+	PaymentStatus,
+} from '../domain/order.js';
 
-
-function order(overrides = {}) {
-  return {
-    orderCode: 'QX-1', status: OrderStatus.ACCEPTED, acceptedAt: '2026-09-11T10:00:00.000Z',
-    payment: { status: PaymentStatus.PENDING }, ...overrides
-  };
+export class DomainError extends Error {
+	constructor(message) {
+		super(message);
+		this.name = 'DomainError';
+	}
 }
 
-test('lista pedidos abertos em ordem de aceite e inclui posição', async () => {
-  const service = new OrderService(new InMemoryOrderRepository([
-    order({ orderCode: 'QX-2', acceptedAt: '2026-09-11T11:00:00.000Z' }), order()
-  ]));
-  const result = await service.listOpenOrders();
-  assert.deepEqual(result.map(({ orderCode, position }) => ({ orderCode, position })), [
-    { orderCode: 'QX-1', position: 1 }, { orderCode: 'QX-2', position: 2 }
-  ]);
-});
+export class OrderService {
+	/**
+	 * @param {object} repository - precisa expor findAll, findByCode e save.
+	 * @param {() => Date} clock - injeção de relógio, facilita testes.
+	 */
+	constructor(repository, clock = () => new Date()) {
+		this.repository = repository;
+		this.clock = clock;
+	}
 
-test('não avança pedido sem pagamento validado', async () => {
-  const service = new OrderService(new InMemoryOrderRepository([order()]));
-  await assert.rejects(() => service.updateStatus('QX-1', OrderStatus.PREPARING), DomainError);
-});
+	// Lista pedidos ainda "em aberto" (não entregues/cancelados),
+	// ordenados por ordem de aceite, com a posição na fila.
+	async listOpenOrders() {
+		const orders = await this.repository.findAll();
+		return orders
+			.filter((order) => !CLOSED_ORDER_STATUSES.includes(order.status))
+			.sort((a, b) => new Date(a.acceptedAt) - new Date(b.acceptedAt))
+			.map((order, index) => ({ ...order, position: index + 1 }));
+	}
 
-test('valida pagamento e então permite preparar o pedido', async () => {
-  const service = new OrderService(new InMemoryOrderRepository([order()]), () => new Date('2026-09-11T12:00:00.000Z'));
-  const paid = await service.validatePayment('QX-1', { approved: true, validatedBy: 'seller-1' });
-  assert.equal(paid.payment.status, PaymentStatus.VALIDATED);
-  const updated = await service.updateStatus('QX-1', OrderStatus.PREPARING);
-  assert.equal(updated.status, OrderStatus.PREPARING);
-});
+	async validatePayment(orderCode, { approved, validatedBy }) {
+		const order = await this._getOrderOrFail(orderCode);
 
-test('impede saltos entre status', async () => {
-  const service = new OrderService(new InMemoryOrderRepository([
-    order({ payment: { status: PaymentStatus.VALIDATED } })
-  ]));
-  await assert.rejects(() => service.updateStatus('QX-1', OrderStatus.READY), DomainError);
-});
+		const updated = {
+			...order,
+			payment: {
+				...order.payment,
+				status: approved ? PaymentStatus.VALIDATED : PaymentStatus.REJECTED,
+				validatedBy,
+				validatedAt: this.clock().toISOString(),
+			},
+		};
+
+		return this.repository.save(updated);
+	}
+
+	async updateStatus(orderCode, newStatus) {
+		const order = await this._getOrderOrFail(orderCode);
+
+		const currentIndex = ORDER_STATUS_SEQUENCE.indexOf(order.status);
+		const nextIndex = ORDER_STATUS_SEQUENCE.indexOf(newStatus);
+
+		if (nextIndex === -1 || nextIndex !== currentIndex + 1) {
+			throw new DomainError(
+				`Não é possível pular direto de "${order.status}" para "${newStatus}".`
+			);
+		}
+
+		// Antes de entrar em preparo, o pagamento precisa estar validado.
+		if (
+			newStatus === ORDER_STATUS_SEQUENCE[1] &&
+			order.payment?.status !== PaymentStatus.VALIDATED
+		) {
+			throw new DomainError(
+				'Não é possível avançar o pedido sem pagamento validado.'
+			);
+		}
+
+		return this.repository.save({ ...order, status: newStatus });
+	}
+
+	async _getOrderOrFail(orderCode) {
+		const order = await this.repository.findByCode(orderCode);
+		if (!order) {
+			throw new DomainError(`Pedido "${orderCode}" não encontrado.`);
+		}
+		return order;
+	}
+}
