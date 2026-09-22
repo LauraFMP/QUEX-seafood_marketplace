@@ -1,8 +1,9 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { InMemoryOrderRepository } = require('../src/repositories/in-memory-order-repository');
-const { OrderService, DomainError } = require('../src/services/order-service');
-const { OrderStatus, PaymentStatus } = require('../src/domain/order');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { InMemoryOrderRepository } from '../src/repositories/in-memory-order-repository.js';
+import { OrderService, DomainError } from '../src/services/order-service.js';
+import { OrderStatus, PaymentStatus } from '../src/domain/order.js';
+
 
 function order(overrides = {}) {
   return {
